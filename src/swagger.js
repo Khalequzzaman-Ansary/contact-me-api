@@ -6,11 +6,12 @@ const options = {
     info: {
       title: "Contact API",
       version: "1.0.0",
-      description: "API for contact form submissions + real-time stream (SSE)",
+      description: "API for contact form submissions",
     },
-    servers: [{ url: "/" }],
-     tags: [{ name: "Health" }, { name: "Contact" }],
-         tags: [{ name: "Health" }, { name: "Contact" }],
+    
+    servers: [{ url: "/" }], 
+    
+    tags: [{ name: "Health" }, { name: "Contact" }],
 
     components: {
       schemas: {
@@ -113,29 +114,10 @@ const options = {
           },
         },
       },
-
-      "/api/contact/stream": {
-        get: {
-          tags: ["Contact"],
-          summary: "Server-Sent Events stream of new contact messages",
-          description:
-            "Sends SSE events. Clients should set Accept: text/event-stream and keep the connection open.",
-          responses: {
-            200: {
-              description: "SSE stream",
-              content: {
-                "text/event-stream": {
-                  schema: { type: "string" },
-                  example: "event: ping\\ndata: {}\\n\\n",
-                },
-              },
-            },
-          },
-        },
-      },
     },
  },
-  apis: [],
+
+  apis: [], 
 };
 
 module.exports = swaggerJSDoc(options);
