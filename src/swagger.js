@@ -1,5 +1,4 @@
 const swaggerJSDoc = require("swagger-jsdoc");
-const path = require("path");
 
 const options = {
   definition: {
@@ -9,7 +8,7 @@ const options = {
       version: "1.0.0",
       description: "API for contact form submissions + real-time stream (SSE)",
     },
-    servers: [{ url: "http://localhost:4000" }],
+    servers: [{ url: "/" }],
      tags: [{ name: "Health" }, { name: "Contact" }],
          tags: [{ name: "Health" }, { name: "Contact" }],
 
@@ -136,11 +135,7 @@ const options = {
       },
     },
  },
-
-  // IMPORTANT: absolute path so swagger-jsdoc actually finds your annotations
-  apis: [path.join(__dirname, "server.js")],
-  // or if you later split routes:
-  // apis: [path.join(__dirname, "**/*.js")],
+  apis: [],
 };
 
 module.exports = swaggerJSDoc(options);
