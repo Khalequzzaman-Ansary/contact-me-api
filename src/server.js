@@ -50,8 +50,19 @@ app.use(
   })
 );
 
+
 // ---- swagger
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// CDN options to ensure assets load correctly on Vercel
+const swaggerUiOptions = {
+  customCssUrl: "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css",
+  customJs: [
+    "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-bundle.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-standalone-preset.js",
+  ],
+};
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+
 app.get("/", (req, res) => {
   res.send(`
     <div style="font-family: sans-serif; text-align: center; padding: 50px;">
