@@ -163,7 +163,12 @@ app.get("/api/contact/stream", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Contact API running: http://localhost:${PORT}`);
-  console.log(`Swagger UI:         http://localhost:${PORT}/docs`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Contact API running: http://localhost:${PORT}`);
+    console.log(`Swagger UI:         http://localhost:${PORT}/docs`);
+  });
+}
+
+// Export the app for Vercel
+module.exports = app;

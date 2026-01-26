@@ -98,7 +98,7 @@ const options = {
         },
         get: {
           tags: ["Contact"],
-          summary: "List contact messages (in-memory)",
+          summary: "List contact messages",
           responses: {
             200: {
               description: "List of messages",
