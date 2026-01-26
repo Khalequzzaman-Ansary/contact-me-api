@@ -28,7 +28,12 @@ const pool = new Pool({
 });
 
 // ---- middleware
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false, 
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(morgan("dev"));
 app.use(express.json({ limit: "10kb" }));
 
@@ -47,6 +52,15 @@ app.use(
 
 // ---- swagger
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/", (req, res) => {
+  res.send(`
+    <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+      <h1>Contact API is Running</h1>
+      <p>Status: <span style="color: green;">Active</span></p>
+      <a href="/docs" style="font-size: 1.2rem; color: blue;">View Documentation</a>
+    </div>
+  `);
+});
 
 // ---- in-memory storage (replace with DB later)
 const messages = [];
