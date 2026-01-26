@@ -15,16 +15,19 @@ app.get("/docs.json", (req, res) => res.json(swaggerSpec));
 const PORT = process.env.PORT || 4000;
 
 /* ---- DB ---- */
-if (!process.env.DATABASE_URL) {
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
   console.error("Missing DATABASE_URL in environment (.env)");
   process.exit(1);
 }
 
+// If it's not local, it's on production. we MUST use SSL.
+const isLocalConnection = connectionString && connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes("localhost") 
-    ? false 
-    : { rejectUnauthorized: false }, // Required for cloud DBs (Neon/Supabase)
+  connectionString: connectionString,
+  // Enable SSL for any non-local connection (like Neon)
+  ssl: isLocalConnection ? false : { rejectUnauthorized: false },
 });
 
 // ---- middleware
