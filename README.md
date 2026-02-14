@@ -1,4 +1,4 @@
-# Contact API
+﻿# Contact API
 
 > Enterprise-ready contact form backend — Express + PostgreSQL + SSE + OpenAPI
 >
@@ -135,5 +135,20 @@ Contributions are welcome. Suggested next steps:
 This project uses the ISC license as declared in `package.json`.
 
 ---
+
+## 📁 Folder structure
+
+Below is the repository layout with short descriptions for each file/folder.
+
+```
+
+📄 `package.json` — Project metadata, dependencies and npm scripts
+📄 `README.md` — Project overview, setup and documentation
+📄 `vercel.json` — Vercel deployment configuration and rewrites
+📁 `src/` — Source code and server logic
+📄 `server.js` — Express server entrypoint and routes
+📄 `swagger.js` — OpenAPI (Swagger) setup and documentation generator
+
+```
 
 Built with ❤️ by [Khalequzzaman Ansary](https://ansary-portfolio.vercel.app/)
