@@ -134,4 +134,4 @@ This project uses the ISC license as declared in `package.json`.
 
 ---
 
-Created with ❤️ by [Khalequzzaman Ansary] ("https://ansary-portfolio.vercel.app/")
+Built with ❤️ by [Khalequzzaman Ansary](https://ansary-portfolio.vercel.app/)
