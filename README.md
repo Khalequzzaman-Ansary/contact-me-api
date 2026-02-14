@@ -21,6 +21,23 @@ Contact API is a lightweight, secure backend for handling contact form submissio
 - API docs: `/docs` and machine-readable `/docs.json`
 - Ready for Vercel deployment (see `vercel.json`)
 
+## 📁 Folder structure
+
+Below is the repository layout with short descriptions for each file/folder.
+
+```
+
+contact-api
+├── package-lock.json
+├── package.json
+├── README.md
+├── src
+|  ├── server.js
+|  └── swagger.js
+└── vercel.json
+
+```
+
 ## Quickstart (Local)
 
 1. Install dependencies
@@ -135,20 +152,5 @@ Contributions are welcome. Suggested next steps:
 This project uses the ISC license as declared in `package.json`.
 
 ---
-
-## 📁 Folder structure
-
-Below is the repository layout with short descriptions for each file/folder.
-
-```
-
-📄 `package.json` — Project metadata, dependencies and npm scripts
-📄 `README.md` — Project overview, setup and documentation
-📄 `vercel.json` — Vercel deployment configuration and rewrites
-📁 `src/` — Source code and server logic
-📄 `server.js` — Express server entrypoint and routes
-📄 `swagger.js` — OpenAPI (Swagger) setup and documentation generator
-
-```
 
 Built with ❤️ by [Khalequzzaman Ansary](https://ansary-portfolio.vercel.app/)
