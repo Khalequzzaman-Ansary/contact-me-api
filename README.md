@@ -133,10 +133,10 @@ Connections:
 
 ## Vercel Deployment
 
-This repository includes `vercel.json` configured to rewrite requests to `server.js` for serverful deployment. If deploying on Vercel:
+This repository includes `vercel.json` configured to rewrite requests to the serverless function at `api/server.js`. If deploying on Vercel:
 
-- Ensure your Vercel project has the `DATABASE_URL` and `CORS_ORIGIN` environment variables configured.
-- The code exports the Express `app` to support serverless/serverful deployment patterns.
+- Ensure your Vercel project has the `DATABASE_URL`, `CORS_ORIGIN`, and `JWT_SECRET` environment variables configured.
+- The `api/server.js` file imports and exports the Express `app` from `src/server.js` for serverless deployment.
 
 ## Useful files
 
