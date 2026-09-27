@@ -111,7 +111,7 @@ app.post("/api/contact", async (req, res) => {
     });
 
     const created = {
-      id: contact._id.toString(),
+      id: contact.id,
       name: contact.name,
       email: contact.email,
       message: contact.message,
@@ -142,7 +142,7 @@ app.get("/api/contact", async (req, res) => {
       .lean();
 
     const rows = contacts.map((c) => ({
-      id: c._id.toString(),
+      id: c.id,
       name: c.name,
       email: c.email,
       message: c.message,
