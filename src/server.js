@@ -20,16 +20,26 @@ const PORT = process.env.PORT || 4000;
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   console.error("Missing DATABASE_URL in environment (.env)");
-  process.exit(1);
 }
 
-mongoose
-  .connect(connectionString)
-  .then(() => console.log("[DB] MongoDB connected ✅"))
-  .catch((err) => {
-    console.error("[DB] MongoDB connection failed:", err.message);
-    process.exit(1);
-  });
+let connectionPromise;
+
+async function connectToDatabase() {
+  if (mongoose.connection.readyState === 1) return mongoose;
+  if (!connectionString) throw new Error("DATABASE_URL is not configured");
+
+  connectionPromise ??= mongoose
+    .connect(connectionString, {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 10000,
+    })
+    .catch((error) => {
+      connectionPromise = undefined;
+      throw error;
+    });
+
+  return connectionPromise;
+}
 
 // ---- middleware
 app.use(
@@ -43,7 +53,18 @@ app.use(express.json({ limit: "10kb" }));
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    origin(origin, callback) {
+      const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+        .split(",")
+        .map((value) => value.trim().replace(/\/$/, ""))
+        .filter(Boolean);
+
+      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origin is not allowed by CORS"));
+    },
   })
 );
 
@@ -90,9 +111,14 @@ function broadcastSSE(eventName, data) {
   for (const res of sseClients) res.write(payload);
 }
 
-app.get("/api/health", (req, res) => {
-  const dbUp = mongoose.connection.readyState === 1;
-  res.json({ ok: true, uptime: process.uptime(), db: dbUp ? "up" : "down" });
+app.get("/api/health", async (req, res) => {
+  try {
+    await connectToDatabase();
+    res.json({ ok: true, uptime: process.uptime(), db: "up" });
+  } catch (error) {
+    console.error("[DB] health check failed:", error.message);
+    res.status(503).json({ ok: false, uptime: process.uptime(), db: "down" });
+  }
 });
 
 
@@ -105,6 +131,7 @@ app.post("/api/contact", async (req, res) => {
   }
 
   try {
+    await connectToDatabase();
     const contact = await Contact.create({
       name: name.trim(),
       email: email.trim(),
@@ -137,6 +164,7 @@ app.post("/api/contact", async (req, res) => {
 
 app.get("/api/contact", async (req, res) => {
   try {
+    await connectToDatabase();
     const contacts = await Contact.find()
       .sort({ createdAt: -1 })
       .limit(200)
@@ -159,6 +187,7 @@ app.get("/api/contact", async (req, res) => {
 
 app.delete("/api/contact", authenticate, async (req, res) => {
   try {
+    await connectToDatabase();
     await Contact.deleteMany({});
     const Counter = require("./models/Counter");
     await Counter.findByIdAndUpdate(
