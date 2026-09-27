@@ -31,7 +31,7 @@ const options = {
         ContactMessage: {
           type: "object",
           properties: {
-            id: { type: "integer", format: "int64", example: 1 },
+            id: { type: "string", example: "665f1a2b3c4d5e6f7a8b9c0d" },
             name: { type: "string", example: "Ada Lovelace" },
             email: { type: "string", format: "email", example: "ada@example.com" },
             message: { type: "string", example: "Hello from the contact form." },

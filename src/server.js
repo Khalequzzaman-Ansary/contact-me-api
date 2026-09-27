@@ -1,7 +1,7 @@
 require("dotenv").config();
 
 const express = require("express");
-const { Pool } = require("pg");
+const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
@@ -9,31 +9,31 @@ const rateLimit = require("express-rate-limit");
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
+const Contact = require("./models/Contact");
 
 const app = express();
 app.get("/docs.json", (req, res) => res.json(swaggerSpec));
 const PORT = process.env.PORT || 4000;
 
-/* ---- DB ---- */
+/* ---- DB (MongoDB) ---- */
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
   console.error("Missing DATABASE_URL in environment (.env)");
   process.exit(1);
 }
 
-// If it's not local, it's on production. we MUST use SSL.
-const isLocalConnection = connectionString && connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
-
-const pool = new Pool({
-  connectionString: connectionString,
-  // Enable SSL for any non-local connection (like Neon)
-  ssl: isLocalConnection ? false : { rejectUnauthorized: false },
-});
+mongoose
+  .connect(connectionString)
+  .then(() => console.log("[DB] MongoDB connected ✅"))
+  .catch((err) => {
+    console.error("[DB] MongoDB connection failed:", err.message);
+    process.exit(1);
+  });
 
 // ---- middleware
 app.use(
   helmet({
-    contentSecurityPolicy: false, 
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   })
 );
@@ -55,12 +55,17 @@ app.use(
 
 
 // ---- swagger
+// Serve static files from src directory (for dark mode assets)
+app.use("/src", express.static(__dirname));
+
 // CDN options to ensure assets load correctly on Vercel
 const swaggerUiOptions = {
   customCssUrl: "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css",
+  customCss: require("fs").readFileSync(__dirname + "/swagger-dark.css", "utf8"),
   customJs: [
     "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-bundle.js",
     "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-standalone-preset.js",
+    "/src/swagger-toggle.js",
   ],
 };
 
@@ -76,10 +81,7 @@ app.get("/", (req, res) => {
   `);
 });
 
-// ---- in-memory storage (replace with DB later)
-const messages = [];
-
-// ---- SSE clients (real-time)
+// ---- SSE clients (real-time) ----
 const sseClients = new Set();
 
 function broadcastSSE(eventName, data) {
@@ -88,64 +90,45 @@ function broadcastSSE(eventName, data) {
 }
 
 app.get("/api/health", (req, res) => {
-  pool
-    .query("SELECT 1 AS ok")
-    .then(() => res.json({ ok: true, uptime: process.uptime(), db: "up" }))
-    .catch(() => res.json({ ok: true, uptime: process.uptime(), db: "down" }));
+  const dbUp = mongoose.connection.readyState === 1;
+  res.json({ ok: true, uptime: process.uptime(), db: dbUp ? "up" : "down" });
 });
 
 
 app.post("/api/contact", async (req, res) => {
   const { name, email, message } = req.body ?? {};
 
-  // bare-minimum validation (you can upgrade to zod/joi later)
-  if (typeof name !== "string" || name.trim().length < 2 || name.length > 80) {
-    return res.status(400).json({ error: "Invalid name" });
+  // basic presence check (Mongoose handles detailed validation)
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
-  if (
-    typeof email !== "string" ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-    email.length > 160
-  ) {
-    return res.status(400).json({ error: "Invalid email" });
-  }
-  if (
-    typeof message !== "string" ||
-    message.trim().length < 5 ||
-    message.length > 2000
-  ) {
-    return res.status(400).json({ error: "Invalid message" });
-  }
-
-const cleanName = name.trim();
-  const cleanEmail = email.trim();
-  const cleanMessage = message.trim();
 
   try {
-    const result = await pool.query(
-      `INSERT INTO contact_messages (name, email, message)
-       VALUES ($1, $2, $3)
-       RETURNING id, name, email, message, created_at`,
-      [cleanName, cleanEmail, cleanMessage]
-    );
+    const contact = await Contact.create({
+      name: name.trim(),
+      email: email.trim(),
+      message: message.trim(),
+    });
 
-    const row = result.rows[0];
     const created = {
-      id: Number(row.id),
-      name: row.name,
-      email: row.email,
-      message: row.message,
-      createdAt: row.created_at.toISOString(),
+      id: contact._id.toString(),
+      name: contact.name,
+      email: contact.email,
+      message: contact.message,
+      createdAt: contact.createdAt.toISOString(),
     };
 
     console.log("[CONTACT] request body:", req.body);
     console.log("[CONTACT] response body:", created);
 
-  // real-time push
-  broadcastSSE("contact:new", created);
+    // real-time push
+    broadcastSSE("contact:new", created);
 
-   return res.status(201).json(created);
+    return res.status(201).json(created);
   } catch (err) {
+    if (err.name === "ValidationError") {
+      return res.status(400).json({ error: err.message });
+    }
     console.error("[DB] insert failed:", err);
     return res.status(500).json({ error: "Database error" });
   }
@@ -153,25 +136,23 @@ const cleanName = name.trim();
 
 app.get("/api/contact", async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT id, name, email, message, created_at
-       FROM contact_messages
-       ORDER BY created_at DESC
-       LIMIT 200`
-    );
-    const rows = result.rows.map((r) => ({
-      id: Number(r.id),
-      name: r.name,
-      email: r.email,
-      message: r.message,
-      createdAt: r.created_at.toISOString(),
+    const contacts = await Contact.find()
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+
+    const rows = contacts.map((c) => ({
+      id: c._id.toString(),
+      name: c.name,
+      email: c.email,
+      message: c.message,
+      createdAt: c.createdAt.toISOString(),
     }));
     res.json(rows);
   } catch (err) {
     console.error("[DB] select failed:", err);
     res.status(500).json({ error: "Database error" });
   }
-
 });
 
 

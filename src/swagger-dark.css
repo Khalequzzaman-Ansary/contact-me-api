@@ -1,0 +1,274 @@
+/* Dark mode overrides for Swagger UI */
+
+/* ---- Base / Reset ---- */
+body.dark-mode {
+  background-color: #0d1117;
+  color: #c9d1d9;
+}
+
+body.dark-mode .swagger-ui {
+  color: #c9d1d9;
+}
+
+/* ---- Topbar ---- */
+body.dark-mode .swagger-ui .topbar {
+  background-color: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+body.dark-mode .swagger-ui .topbar .download-url-wrapper .download-url-button {
+  background: #238636;
+  color: #ffffff;
+}
+
+/* ---- Info / Title ---- */
+body.dark-mode .swagger-ui .info {
+  background-color: #0d1117;
+}
+
+body.dark-mode .swagger-ui .info .title,
+body.dark-mode .swagger-ui .info h1,
+body.dark-mode .swagger-ui .info h2,
+body.dark-mode .swagger-ui .info h3,
+body.dark-mode .swagger-ui .info h4 {
+  color: #f0f6fc;
+}
+
+body.dark-mode .swagger-ui .info .description,
+body.dark-mode .swagger-ui .info p {
+  color: #8b949e;
+}
+
+/* ---- Scheme / Servers ---- */
+body.dark-mode .swagger-ui .scheme-container {
+  background-color: #161b22;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .swagger-ui .scheme-container .schemes-title {
+  color: #f0f6fc;
+}
+
+/* ---- Operation blocks ---- */
+body.dark-mode .swagger-ui .opblock {
+  background-color: #161b22;
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-summary {
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-summary-method {
+  background-color: #238636;
+  color: #ffffff;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-summary-path {
+  color: #f0f6fc;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-summary-description {
+  color: #8b949e;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-summary-operation-id {
+  color: #8b949e;
+}
+
+/* ---- Method badges ---- */
+body.dark-mode .swagger-ui .opblock.opblock-get .opblock-summary-method {
+  background-color: #1f6feb;
+}
+
+body.dark-mode .swagger-ui .opblock.opblock-post .opblock-summary-method {
+  background-color: #238636;
+}
+
+body.dark-mode .swagger-ui .opblock.opblock-put .opblock-summary-method {
+  background-color: #9e6a03;
+}
+
+body.dark-mode .swagger-ui .opblock.opblock-delete .opblock-summary-method {
+  background-color: #da3633;
+}
+
+body.dark-mode .swagger-ui .opblock.opblock-patch .opblock-summary-method {
+  background-color: #8957e5;
+}
+
+body.dark-mode .swagger-ui .opblock.opblock-options .opblock-summary-method,
+body.dark-mode .swagger-ui .opblock.opblock-head .opblock-summary-method {
+  background-color: #6e7681;
+}
+
+/* ---- Parameters / Tables ---- */
+body.dark-mode .swagger-ui .opblock .opblock-section-header {
+  background-color: #1c2128;
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section-header h4 {
+  color: #f0f6fc;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section-header .btn {
+  color: #c9d1d9;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section-header .btn:hover {
+  background-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section-header .btn.selected {
+  background-color: #238636;
+  color: #ffffff;
+}
+
+/* ---- Tables ---- */
+body.dark-mode .swagger-ui .opblock .opblock-section .parameters-col_description p,
+body.dark-mode .swagger-ui .opblock .opblock-section .parameters-col_description select,
+body.dark-mode .swagger-ui .opblock .opblock-section .parameters-col_description input {
+  color: #c9d1d9;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section .parameters-col_description input,
+body.dark-mode .swagger-ui .opblock .opblock-section .parameters-col_description select {
+  background-color: #0d1117;
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section .parameters-col_description input:focus,
+body.dark-mode .swagger-ui .opblock .opblock-section .parameters-col_description select:focus {
+  border-color: #1f6feb;
+}
+
+/* ---- Response section ---- */
+body.dark-mode .swagger-ui .opblock .opblock-section .responses-inner {
+  background-color: #161b22;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section .responses-inner h4,
+body.dark-mode .swagger-ui .opblock .opblock-section .responses-inner h5 {
+  color: #f0f6fc;
+}
+
+/* ---- Code blocks / pre ---- */
+body.dark-mode .swagger-ui .opblock .opblock-section pre,
+body.dark-mode .swagger-ui .opblock .opblock-section code {
+  background-color: #161b22;
+  color: #c9d1d9;
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section .microlight {
+  background-color: #161b22;
+  color: #c9d1d9;
+}
+
+/* ---- Models ---- */
+body.dark-mode .swagger-ui .model-box {
+  background-color: #161b22;
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .model-box .model-title {
+  color: #f0f6fc;
+}
+
+body.dark-mode .swagger-ui .model-box .model .property,
+body.dark-mode .swagger-ui .model-box .model .property.primitive {
+  color: #8b949e;
+}
+
+/* ---- Tabs ---- */
+body.dark-mode .swagger-ui .opblock .opblock-section .opblock-description-wrapper .tab li button {
+  color: #8b949e;
+}
+
+body.dark-mode .swagger-ui .opblock .opblock-section .opblock-description-wrapper .tab li button.selected {
+  color: #f0f6fc;
+  border-bottom-color: #1f6feb;
+}
+
+/* ---- Buttons ---- */
+body.dark-mode .swagger-ui .btn {
+  background-color: #21262d;
+  color: #c9d1d9;
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .btn:hover {
+  background-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .btn.authorize {
+  background-color: #238636;
+  color: #ffffff;
+  border-color: #238636;
+}
+
+/* ---- Inputs ---- */
+body.dark-mode .swagger-ui input[type="text"],
+body.dark-mode .swagger-ui input[type="password"],
+body.dark-mode .swagger-ui input[type="search"],
+body.dark-mode .swagger-ui input[type="email"],
+body.dark-mode .swagger-ui input[type="url"],
+body.dark-mode .swagger-ui textarea,
+body.dark-mode .swagger-ui select {
+  background-color: #0d1117;
+  color: #c9d1d9;
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui input[type="text"]:focus,
+body.dark-mode .swagger-ui input[type="password"]:focus,
+body.dark-mode .swagger-ui input[type="search"]:focus,
+body.dark-mode .swagger-ui input[type="email"]:focus,
+body.dark-mode .swagger-ui input[type="url"]:focus,
+body.dark-mode .swagger-ui textarea:focus,
+body.dark-mode .swagger-ui select:focus {
+  border-color: #1f6feb;
+}
+
+/* ---- Modal ---- */
+body.dark-mode .swagger-ui .dialog-ux .modal-ux {
+  background-color: #161b22;
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .dialog-ux .modal-ux-header {
+  border-color: #30363d;
+}
+
+body.dark-mode .swagger-ui .dialog-ux .modal-ux-content {
+  background-color: #161b22;
+}
+
+/* ---- Dark mode toggle button ---- */
+.dark-mode-toggle {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 9999;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #c9d1d9;
+  transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dark-mode-toggle:hover {
+  background: #30363d;
+}
+
+.dark-mode-toggle .toggle-icon {
+  font-size: 16px;
+  line-height: 1;
+}

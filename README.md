@@ -1,6 +1,6 @@
 ﻿# Contact API
 
-> Enterprise-ready contact form backend — Express + PostgreSQL + SSE + OpenAPI
+> Enterprise-ready contact form backend — Express + MongoDB + SSE + OpenAPI
 >
 > Live URL: <https://contact-api-brown.vercel.app/>
 
@@ -11,14 +11,15 @@ Contact API is a lightweight, secure backend for handling contact form submissio
 - REST endpoints for submitting and listing contact messages
 - Server-Sent Events (SSE) for real-time notifications
 - OpenAPI (Swagger) documentation served at `/docs`
-- Production-ready defaults: Helmet, rate-limiting, CORS, and PostgreSQL connection with SSL support
+- Production-ready defaults: Helmet, rate-limiting, CORS, and MongoDB connection
 
 ## Key features
 
-- Robust validation and error handling
-- PostgreSQL persistence (uses `contact_messages` table)
+- Robust validation and error handling (via Mongoose schema)
+- MongoDB persistence (uses `contacts` collection)
 - Real-time `contact:new` events over SSE at `/api/contact/stream`
 - API docs: `/docs` and machine-readable `/docs.json`
+- Dark mode toggle on the Swagger docs page
 - Ready for Vercel deployment (see `vercel.json`)
 
 ## 📁 Folder structure
@@ -26,16 +27,18 @@ Contact API is a lightweight, secure backend for handling contact form submissio
 Below is the repository layout with short descriptions for each file/folder.
 
 ```
-
 contact-api
 ├── package-lock.json
 ├── package.json
 ├── README.md
 ├── src
 |  ├── server.js
-|  └── swagger.js
+|  ├── swagger.js
+|  ├── swagger-dark.css
+|  ├── swagger-toggle.js
+|  └── models
+|     └── Contact.js
 └── vercel.json
-
 ```
 
 ## Quickstart (Local)
@@ -52,7 +55,7 @@ Required environment variables:
 
 - `PORT` — port to bind (default: `4000`)
 - `CORS_ORIGIN` — allowed origin for CORS
-- `DATABASE_URL` — full Postgres connection string (examples use Neon/Postgres)
+- `DATABASE_URL` — MongoDB connection string (e.g., MongoDB Atlas)
 
 3. Run the server
 
@@ -101,29 +104,32 @@ es.addEventListener("contact:new", (e) => {
 });
 ```
 
-## Database schema
+## Database
 
-The API expects a Postgres table named `contact_messages`. Example migration SQL:
+The API uses MongoDB with Mongoose ODM. The `Contact` model is defined in `src/models/Contact.js` and maps to the `contacts` collection.
 
-```sql
-CREATE TABLE contact_messages (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT NOT NULL,
-  message TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+Example document:
+
+```json
+{
+  "_id": "665f1a2b3c4d5e6f7a8b9c0d",
+  "name": "Ada Lovelace",
+  "email": "ada@example.com",
+  "message": "Hello from the contact form.",
+  "createdAt": "2026-09-27T12:00:00.000Z"
+}
 ```
 
 Connections:
 
-- The app reads `DATABASE_URL` from the environment and automatically enables SSL for non-local connections.
+- The app reads `DATABASE_URL` from the environment and connects via Mongoose.
+- For MongoDB Atlas, use a connection string like: `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/contact-db`
 
 ## Security & Production Notes
 
 - Uses `helmet` with CSP disabled for ease of docs loading on CDN
 - Request logging with `morgan` (dev) and rate limiting (`express-rate-limit`) to protect endpoints
-- Ensure `DATABASE_URL` is set to a secure production database and your provider's SSL certs are trusted
+- Ensure `DATABASE_URL` points to a secure production MongoDB instance
 
 ## Vercel Deployment
 
@@ -136,6 +142,9 @@ This repository includes `vercel.json` configured to rewrite requests to `server
 
 - OpenAPI setup: [src/swagger.js](src/swagger.js)
 - Server entry: [src/server.js](src/server.js)
+- Contact model: [src/models/Contact.js](src/models/Contact.js)
+- Dark mode styles: [src/swagger-dark.css](src/swagger-dark.css)
+- Dark mode toggle: [src/swagger-toggle.js](src/swagger-toggle.js)
 - Deployment config: [vercel.json](vercel.json)
 - Environment example: [.env](.env)
 
@@ -144,7 +153,6 @@ This repository includes `vercel.json` configured to rewrite requests to `server
 Contributions are welcome. Suggested next steps:
 
 - Add automated tests and CI
-- Add migration tooling (e.g. `node-pg-migrate` or `knex`)
 - Add input schema validation (Zod/Joi) and centralized error handling
 
 ## License
