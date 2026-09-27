@@ -77,9 +77,6 @@ app.use(
 
 
 // ---- swagger
-// Serve static files from src directory (for dark mode assets)
-app.use("/src", express.static(__dirname));
-
 // CDN options to ensure assets load correctly on Vercel
 const swaggerUiOptions = {
   customCssUrl: "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css",
@@ -87,8 +84,8 @@ const swaggerUiOptions = {
   customJs: [
     "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-bundle.js",
     "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui-standalone-preset.js",
-    "/src/swagger-toggle.js",
   ],
+  customJsStr: require("fs").readFileSync(__dirname + "/swagger-toggle.js", "utf8"),
 };
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
