@@ -10,6 +10,7 @@ const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
 const Contact = require("./models/Contact");
+const authenticate = require("./middleware/auth");
 
 const app = express();
 app.get("/docs.json", (req, res) => res.json(swaggerSpec));
@@ -155,6 +156,22 @@ app.get("/api/contact", async (req, res) => {
   }
 });
 
+
+app.delete("/api/contact", authenticate, async (req, res) => {
+  try {
+    await Contact.deleteMany({});
+    const Counter = require("./models/Counter");
+    await Counter.findByIdAndUpdate(
+      { _id: "contactId" },
+      { $set: { seq: 0 } },
+      { returnDocument: "after", upsert: true }
+    );
+    res.json({ ok: true, message: "All contacts deleted, counter reset" });
+  } catch (err) {
+    console.error("[DB] delete failed:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
 
 app.get("/api/contact/stream", (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");

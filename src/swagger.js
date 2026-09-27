@@ -14,6 +14,13 @@ const options = {
     tags: [{ name: "Health" }, { name: "Contact" }],
 
     components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
       schemas: {
         ErrorResponse: {
           type: "object",
@@ -108,6 +115,35 @@ const options = {
                     type: "array",
                     items: { $ref: "#/components/schemas/ContactMessage" },
                   },
+                },
+              },
+            },
+          },
+        },
+        delete: {
+          tags: ["Contact"],
+          summary: "Delete all contact messages (admin only)",
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "All contacts deleted",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      ok: { type: "boolean" },
+                      message: { type: "string" },
+                    },
+                  },
+                },
+              },
+            },
+            401: {
+              description: "Unauthorized",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
                 },
               },
             },
