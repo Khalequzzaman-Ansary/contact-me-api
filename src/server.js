@@ -41,6 +41,18 @@ async function connectToDatabase() {
   return connectionPromise;
 }
 
+function getUptimeParts() {
+  let remainingSeconds = Math.floor(process.uptime());
+  const days = Math.floor(remainingSeconds / 86400);
+  remainingSeconds %= 86400;
+  const hours = Math.floor(remainingSeconds / 3600);
+  remainingSeconds %= 3600;
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+
+  return { days, hours, minutes, seconds };
+}
+
 // ---- middleware
 app.use(
   helmet({
@@ -138,10 +150,10 @@ function broadcastSSE(eventName, data) {
 app.get("/api/health", async (req, res) => {
   try {
     await connectToDatabase();
-    res.json({ ok: true, uptime: process.uptime(), db: "up" });
+    res.json({ ok: true, uptime: getUptimeParts(), db: "up" });
   } catch (error) {
     console.error("[DB] health check failed:", error.message);
-    res.status(503).json({ ok: false, uptime: process.uptime(), db: "down" });
+    res.status(503).json({ ok: false, uptime: getUptimeParts(), db: "down" });
   }
 });
 

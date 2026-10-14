@@ -21,6 +21,20 @@ before(
 
 after(() => new Promise((resolve) => server.close(resolve)));
 
+test("health check returns structured uptime when the database is unavailable", async () => {
+  const response = await fetch(`${baseUrl}/api/health`);
+  const health = await response.json();
+
+  assert.equal(response.status, 503);
+  assert.equal(health.ok, false);
+  assert.equal(health.db, "down");
+  assert.deepEqual(Object.keys(health.uptime).sort(), ["days", "hours", "minutes", "seconds"]);
+  assert.ok(Number.isInteger(health.uptime.days) && health.uptime.days >= 0);
+  assert.ok(health.uptime.hours >= 0 && health.uptime.hours <= 23);
+  assert.ok(health.uptime.minutes >= 0 && health.uptime.minutes <= 59);
+  assert.ok(health.uptime.seconds >= 0 && health.uptime.seconds <= 59);
+});
+
 test("malformed JSON returns a JSON 400 response", async () => {
   const response = await fetch(`${baseUrl}/api/contact`, {
     method: "POST",
@@ -168,4 +182,6 @@ test("unknown API paths return JSON 404 while docs retain their response types",
   const openApi = await docs.json();
   assert.ok(openApi.paths["/api/contact"].delete);
   assert.ok(openApi.paths["/api/contact/{id}"].delete);
+  const uptimeSchema = openApi.paths["/api/health"].get.responses[200].content["application/json"].schema;
+  assert.deepEqual(uptimeSchema.properties.uptime.required, ["days", "hours", "minutes", "seconds"]);
 });

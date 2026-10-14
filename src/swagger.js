@@ -62,8 +62,43 @@ const options = {
                     type: "object",
                     properties: {
                       ok: { type: "boolean" },
-                      uptime: { type: "number" },
+                      uptime: {
+                        type: "object",
+                        properties: {
+                          days: { type: "integer", minimum: 0 },
+                          hours: { type: "integer", minimum: 0, maximum: 23 },
+                          minutes: { type: "integer", minimum: 0, maximum: 59 },
+                          seconds: { type: "integer", minimum: 0, maximum: 59 },
+                        },
+                        required: ["days", "hours", "minutes", "seconds"],
+                      },
+                      db: { type: "string", enum: ["up", "down"] },
                     },
+                  },
+                },
+              },
+            },
+            503: {
+              description: "Database is unavailable",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      ok: { type: "boolean", example: false },
+                      uptime: {
+                        type: "object",
+                        properties: {
+                          days: { type: "integer", minimum: 0 },
+                          hours: { type: "integer", minimum: 0, maximum: 23 },
+                          minutes: { type: "integer", minimum: 0, maximum: 59 },
+                          seconds: { type: "integer", minimum: 0, maximum: 59 },
+                        },
+                        required: ["days", "hours", "minutes", "seconds"],
+                      },
+                      db: { type: "string", enum: ["up", "down"], example: "down" },
+                    },
+                    required: ["ok", "uptime", "db"],
                   },
                 },
               },
