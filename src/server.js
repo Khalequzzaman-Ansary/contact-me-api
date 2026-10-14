@@ -54,16 +54,42 @@ app.use(express.json({ limit: "10kb" }));
 app.use(
   cors({
     origin(origin, callback) {
-      const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000")
+      const configuredOrigins = (process.env.CORS_ORIGIN || "")
         .split(",")
         .map((value) => value.trim().replace(/\/$/, ""))
         .filter(Boolean);
+      const allowedOrigins = new Set([
+        "http://localhost:3000",
+        "https://ansary-portfolio.vercel.app",
+        ...configuredOrigins,
+      ]);
+      let isLocalDevelopmentOrigin = false;
 
-      if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+      if (origin) {
+        try {
+          const parsedOrigin = new URL(origin);
+          isLocalDevelopmentOrigin =
+            ["http:", "https:"].includes(parsedOrigin.protocol) &&
+            ["localhost", "127.0.0.1", "[::1]"].includes(parsedOrigin.hostname) &&
+            parsedOrigin.pathname === "/" &&
+            !parsedOrigin.search &&
+            !parsedOrigin.hash;
+        } catch {
+          isLocalDevelopmentOrigin = false;
+        }
+      }
+
+      if (
+        !origin ||
+        allowedOrigins.has(origin.replace(/\/$/, "")) ||
+        isLocalDevelopmentOrigin
+      ) {
         return callback(null, true);
       }
 
-      return callback(new Error("Origin is not allowed by CORS"));
+      const error = new Error("Origin is not allowed by CORS");
+      error.status = 403;
+      return callback(error);
     },
   })
 );
@@ -120,11 +146,19 @@ app.get("/api/health", async (req, res) => {
 
 
 app.post("/api/contact", async (req, res) => {
-  const { name, email, message } = req.body ?? {};
+  const body = req.body;
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return res.status(400).json({ error: "Request body must be a JSON object" });
+  }
 
-  // basic presence check (Mongoose handles detailed validation)
+  const { name, email, message } = body;
+
   if (!name || !email || !message) {
     return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  if ([name, email, message].some((value) => typeof value !== "string")) {
+    return res.status(400).json({ error: "Name, email, and message must be strings" });
   }
 
   try {
@@ -218,10 +252,45 @@ app.get("/api/contact/stream", (req, res) => {
   });
 });
 
+app.use((req, res) => {
+  if (req.path === "/api" || req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "API endpoint not found" });
+  }
+
+  return res.status(404).type("text/plain").send("Not found");
+});
+
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  const isApiRequest = req.path === "/api" || req.path.startsWith("/api/");
+  let error = "Internal server error";
+
+  if (err.type === "entity.parse.failed") {
+    error = "Malformed JSON request body";
+  } else if (err.type === "entity.too.large") {
+    error = "Request body too large";
+  } else if (err.message === "Origin is not allowed by CORS") {
+    error = err.message;
+  }
+
+  console.error("[HTTP] request failed:", { type: err.type, message: err.message });
+  const responseStatus = status >= 400 && status < 500 ? status : 500;
+
+  if (isApiRequest) {
+    return res.status(responseStatus).json({ error });
+  }
+
+  return res.status(responseStatus).type("text/plain").send(error);
+});
+
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Contact API running: http://localhost:${PORT}`);
     console.log(`Swagger UI:         http://localhost:${PORT}/docs`);
+
+    connectToDatabase()
+      .then(() => console.log("MongoDB connected successfully ✓"))
+      .catch((error) => console.error("[DB] connection failed:", error.message));
   });
 }
 
