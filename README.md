@@ -1,91 +1,97 @@
 ﻿# Contact API
 
-> Enterprise-ready contact form backend — Express + MongoDB + SSE + OpenAPI
->
-> Live URL: <https://contact-api-brown.vercel.app/>
+An Express and MongoDB API for contact form submissions. It supports contact creation and listing, private message deletion, real-time notifications with Server-Sent Events, and OpenAPI documentation.
 
-## Project Overview
+- Production API: <https://contact-api-brown.vercel.app/>
+- Interactive API documentation: <https://contact-api-brown.vercel.app/docs>
+- OpenAPI document: <https://contact-api-brown.vercel.app/docs.json>
 
-Contact API is a lightweight, secure backend for handling contact form submissions. It provides:
+## Features
 
-- REST endpoints for submitting and listing contact messages
-- Server-Sent Events (SSE) for real-time notifications
-- OpenAPI (Swagger) documentation served at `/docs`
-- Production-ready defaults: Helmet, rate-limiting, CORS, and MongoDB connection
+- Store contact messages in MongoDB using Mongoose.
+- List up to 200 recent messages.
+- Notify connected clients about new messages through SSE.
+- Privately delete one contact by its numeric API ID or delete all contacts.
+- Inspect service/database health and readable process uptime.
+- Use JSON error responses for API errors, with request validation, CORS, Helmet, logging, and rate limiting.
 
-## Key features
+## Local Setup
 
-- Robust validation and error handling (via Mongoose schema)
-- MongoDB persistence (uses `contacts` collection)
-- Real-time `contact:new` events over SSE at `/api/contact/stream`
-- API docs: `/docs` and machine-readable `/docs.json`
-- Dark mode toggle on the Swagger docs page
-- Ready for Vercel deployment (see `vercel.json`)
-
-## 📁 Folder structure
-
-Below is the repository layout with short descriptions for each file/folder.
-
-```
-contact-api
-├── package-lock.json
-├── package.json
-├── README.md
-├── src
-|  ├── server.js
-|  ├── swagger.js
-|  ├── swagger-dark.css
-|  ├── swagger-toggle.js
-|  └── models
-|     └── Contact.js
-└── vercel.json
-```
-
-## Quickstart (Local)
-
-1. Install dependencies
+Requirements: Node.js, npm, and a MongoDB database.
 
 ```bash
 npm install
 ```
 
-2. Create a `.env` file at the repository root. Example values are present in the repository's `.env` file.
-
-Required environment variables:
-
-- `PORT` — port to bind (default: `4000`)
-- `CORS_ORIGIN` — allowed origin for CORS
-- `DATABASE_URL` — MongoDB connection string (e.g., MongoDB Atlas)
-
-3. Run the server
+Create a root `.env` from the example file and set real credentials:
 
 ```bash
-# Run directly
-node src/server.js
-
-# Or with dotenv preloaded
-node -r dotenv/config src/server.js
+cp .env.example .env
 ```
 
-The server will expose:
+On PowerShell, use `Copy-Item .env.example .env` instead. Configure:
 
-- Web UI docs: `/docs`
-- OpenAPI JSON: `/docs.json`
-- Health check: `/api/health`
-- Contact endpoints: `/api/contact` and `/api/contact/stream`
+| Variable       | Required                      | Description                                                                                            |
+| -------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `DATABASE_URL` | Yes                           | MongoDB connection string, such as `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/contact-db`. |
+| `JWT_SECRET`   | Yes for private delete routes | Secret used to sign and verify admin bearer tokens. Use a long, random value.                          |
+| `CORS_ORIGIN`  | No                            | Comma-separated list of additional exact browser origins allowed to call the API.                      |
+| `PORT`         | No                            | Local HTTP port. Defaults to `4000`.                                                                   |
+
+Start the server:
+
+```bash
+node src/server.js
+```
+
+The server prints its local URL and attempts to connect to MongoDB. After a successful connection it prints `MongoDB connected successfully ✓`. If the database connection fails, the HTTP server still starts and logs the connection failure; database-dependent requests will not succeed until connectivity is restored.
+
+Run the automated tests with:
+
+```bash
+npm test
+```
+
+The test suite uses Node's built-in test runner and intentionally disables the database connection for isolated HTTP tests.
 
 ## API Reference
 
-All endpoints are documented in the OpenAPI spec generated from `src/swagger.js` and accessible through the documentation UI.
+All routes are also listed in Swagger UI at `/docs` and in `/docs.json`.
 
-- GET `/api/health` — health status JSON
-- POST `/api/contact` — submit contact message
-  - Body schema: `name` (string, 2–80), `email` (email), `message` (string, 5–2000)
-  - Returns: created message object (201)
-- GET `/api/contact` — list recent messages (up to 200)
-- GET `/api/contact/stream` — Server-Sent Events (SSE). Clients receive `contact:new` events when new messages arrive.
+| Method   | Path                  | Auth         | Purpose                                                                                                                     |
+| -------- | --------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/`                   | No           | Basic service status page.                                                                                                  |
+| `GET`    | `/api/health`         | No           | API and database status, with uptime split into days, hours, minutes, and seconds. Returns `503` if MongoDB is unavailable. |
+| `POST`   | `/api/contact`        | No           | Create a contact message.                                                                                                   |
+| `GET`    | `/api/contact`        | No           | List up to 200 contacts, newest first.                                                                                      |
+| `GET`    | `/api/contact/stream` | No           | Receive `contact:new` events over Server-Sent Events.                                                                       |
+| `DELETE` | `/api/contact/{id}`   | Bearer token | Delete one contact by its numeric API ID.                                                                                   |
+| `DELETE` | `/api/contact`        | Bearer token | Delete all contacts and reset the contact ID counter.                                                                       |
+| `GET`    | `/docs`               | No           | Interactive Swagger documentation.                                                                                          |
+| `GET`    | `/docs.json`          | No           | OpenAPI JSON document.                                                                                                      |
 
-Example curl (submit):
+### Health Check
+
+Example response when the database is available:
+
+```json
+{
+  "ok": true,
+  "uptime": {
+    "days": 0,
+    "hours": 0,
+    "minutes": 3,
+    "seconds": 26
+  },
+  "db": "up"
+}
+```
+
+When the database is unavailable, the endpoint returns HTTP `503`, with `ok: false` and `db: "down"`; the `uptime` object is still included.
+
+### Create a Contact
+
+Send JSON with a name (2–80 characters), email (up to 160 characters), and message (5–2000 characters):
 
 ```bash
 curl -X POST \
@@ -94,71 +100,86 @@ curl -X POST \
   http://localhost:4000/api/contact
 ```
 
-SSE example (javascript client):
+On success, the API responds with HTTP `201` and a contact object containing the numeric `id`, submitted fields, and `createdAt` timestamp. The contact is also broadcast to connected SSE clients.
+
+### List Contacts
+
+```bash
+curl http://localhost:4000/api/contact
+```
+
+Returns an array of up to 200 contacts, sorted newest first.
+
+### Delete Contacts
+
+Both delete operations require an admin JWT in the `Authorization` header. Generate a one-hour token using the local `JWT_SECRET`:
+
+```bash
+node src/generate-token.js
+```
+
+Keep the printed token private. Delete one contact using the numeric `id` returned by the API:
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer <token>" \
+  http://localhost:4000/api/contact/123
+```
+
+The response is `200` when deleted, `400` for an invalid ID, `401` for a missing or invalid token, and `404` if the contact does not exist. Deleting one contact does not reset the ID counter.
+
+Delete all contacts (destructive; also resets the ID counter):
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer <token>" \
+  http://localhost:4000/api/contact
+```
+
+### Real-Time Events
+
+Clients connected to `/api/contact/stream` receive a `contact:new` event whenever a contact is created:
 
 ```javascript
-const es = new EventSource("http://localhost:4000/api/contact/stream");
-es.addEventListener("contact:new", (e) => {
-  const data = JSON.parse(e.data);
-  console.log("New contact:", data);
+const events = new EventSource("http://localhost:4000/api/contact/stream");
+events.addEventListener("contact:new", (event) => {
+  const contact = JSON.parse(event.data);
+  console.log("New contact:", contact);
 });
 ```
 
-## Database
+## CORS and Security
 
-The API uses MongoDB with Mongoose ODM. The `Contact` model is defined in `src/models/Contact.js` and maps to the `contacts` collection.
+For browser requests, `CORS_ORIGIN` must contain the exact origin of the frontend page (scheme, hostname, and port), not the API URL. Separate multiple origins with commas, for example:
 
-Example document:
-
-```json
-{
-  "_id": "665f1a2b3c4d5e6f7a8b9c0d",
-  "name": "Ada Lovelace",
-  "email": "ada@example.com",
-  "message": "Hello from the contact form.",
-  "createdAt": "2026-09-27T12:00:00.000Z"
-}
+```env
+CORS_ORIGIN=http://localhost:3000,https://your-frontend.example
 ```
 
-Connections:
+The API already permits its configured production frontend/API origins and loopback development hosts (`localhost`, `127.0.0.1`, and `::1`). Other origins must be listed explicitly. CORS is a browser policy, not an authentication mechanism.
 
-- The app reads `DATABASE_URL` from the environment and connects via Mongoose.
-- For MongoDB Atlas, use a connection string like: `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/contact-db`
+The service uses Helmet, Morgan request logging, a 10 KB JSON body limit, and a rate limit of 30 requests per minute per IP. Keep `.env` out of source control and never expose `DATABASE_URL`, `JWT_SECRET`, or generated JWTs in client-side code.
 
-## Security & Production Notes
+## Deployment on Vercel
 
-- Uses `helmet` with CSP disabled for ease of docs loading on CDN
-- Request logging with `morgan` (dev) and rate limiting (`express-rate-limit`) to protect endpoints
-- Ensure `DATABASE_URL` points to a secure production MongoDB instance
+The Vercel function entry point is `api/server.js`, which exports the Express app from `src/server.js`. `vercel.json` rewrites incoming paths to that function. Configure `DATABASE_URL` and `JWT_SECRET` in the Vercel project environment; set `CORS_ORIGIN` to any additional frontend origins, then redeploy after changing environment variables or code.
 
-## Vercel Deployment
+## Project Structure
 
-This repository includes `vercel.json` configured to rewrite requests to the serverless function at `api/server.js`. If deploying on Vercel:
-
-- Ensure your Vercel project has the `DATABASE_URL`, `CORS_ORIGIN`, and `JWT_SECRET` environment variables configured.
-- The `api/server.js` file imports and exports the Express `app` from `src/server.js` for serverless deployment.
-
-## Useful files
-
-- OpenAPI setup: [src/swagger.js](src/swagger.js)
-- Server entry: [src/server.js](src/server.js)
-- Contact model: [src/models/Contact.js](src/models/Contact.js)
-- Dark mode styles: [src/swagger-dark.css](src/swagger-dark.css)
-- Dark mode toggle: [src/swagger-toggle.js](src/swagger-toggle.js)
-- Deployment config: [vercel.json](vercel.json)
-- Environment example: [.env](.env)
-
-## Contributing
-
-Contributions are welcome. Suggested next steps:
-
-- Add automated tests and CI
-- Add input schema validation (Zod/Joi) and centralized error handling
+```text
+api/server.js                 Vercel function entry point
+src/server.js                 Express app, routes, middleware, and DB connection
+src/swagger.js                OpenAPI specification
+src/models/Contact.js         Contact schema and numeric ID generation
+src/models/Counter.js         Contact ID counter schema
+src/middleware/auth.js        Bearer JWT authentication
+src/generate-token.js         Local one-hour admin token generator
+src/swagger-dark.css          Swagger UI theme
+src/swagger-toggle.js         Swagger UI theme toggle
+test/contact-api.test.js      HTTP tests
+vercel.json                   Vercel routing configuration
+```
 
 ## License
 
-This project uses the ISC license as declared in `package.json`.
-
----
-
-Built with ❤️ by [Khalequzzaman Ansary](https://ansary-portfolio.vercel.app/)
+ISC (see `package.json`).
