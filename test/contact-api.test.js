@@ -1,6 +1,8 @@
 process.env.DATABASE_URL = "";
+process.env.JWT_SECRET = "test-secret";
 
 const assert = require("node:assert/strict");
+const jwt = require("jsonwebtoken");
 const { after, before, test } = require("node:test");
 const app = require("../src/server");
 
@@ -57,21 +59,51 @@ test("non-string contact fields return JSON 400 without reaching MongoDB", async
   });
 });
 
-test("documented frontend origin is allowed and unknown origins are rejected", async () => {
-  const allowed = await fetch(`${baseUrl}/api/contact`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Origin: "https://ansary-portfolio.vercel.app",
-    },
-    body: JSON.stringify({ name: 42, email: "ada@example.com", message: "Hello there" }),
+test("delete by ID requires authentication and validates IDs before database access", async () => {
+  const unauthenticated = await fetch(`${baseUrl}/api/contact/1`, { method: "DELETE" });
+  assert.equal(unauthenticated.status, 401);
+  assert.deepEqual(await unauthenticated.json(), {
+    error: "Missing or invalid Authorization header",
   });
 
-  assert.equal(allowed.status, 400);
-  assert.equal(
-    allowed.headers.get("access-control-allow-origin"),
-    "https://ansary-portfolio.vercel.app"
-  );
+  const token = jwt.sign({ role: "admin" }, process.env.JWT_SECRET);
+  for (const id of ["0", "9007199254740992"]) {
+    const invalidId = await fetch(`${baseUrl}/api/contact/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    assert.equal(invalidId.status, 400, `id ${id}`);
+    assert.deepEqual(await invalidId.json(), {
+      error: "Contact ID must be a positive integer",
+    });
+  }
+
+  const validIdWithoutDatabase = await fetch(`${baseUrl}/api/contact/1`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.equal(validIdWithoutDatabase.status, 500);
+  assert.deepEqual(await validIdWithoutDatabase.json(), { error: "Database error" });
+});
+
+test("documented frontend origin is allowed and unknown origins are rejected", async () => {
+  for (const origin of [
+    "https://ansary-portfolio.vercel.app",
+    "https://contact-api-brown.vercel.app",
+  ]) {
+    const allowed = await fetch(`${baseUrl}/api/contact`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: origin,
+      },
+      body: JSON.stringify({ name: 42, email: "ada@example.com", message: "Hello there" }),
+    });
+
+    assert.equal(allowed.status, 400, `origin ${origin}`);
+    assert.equal(allowed.headers.get("access-control-allow-origin"), origin);
+  }
 
   for (const origin of ["http://localhost:5173", "http://127.0.0.1:5500"]) {
     const local = await fetch(`${baseUrl}/api/contact`, {
@@ -133,4 +165,7 @@ test("unknown API paths return JSON 404 while docs retain their response types",
   const docs = await fetch(`${baseUrl}/docs.json`);
   assert.equal(docs.status, 200);
   assert.match(docs.headers.get("content-type"), /application\/json/);
+  const openApi = await docs.json();
+  assert.ok(openApi.paths["/api/contact"].delete);
+  assert.ok(openApi.paths["/api/contact/{id}"].delete);
 });

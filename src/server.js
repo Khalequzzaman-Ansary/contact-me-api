@@ -61,6 +61,7 @@ app.use(
       const allowedOrigins = new Set([
         "http://localhost:3000",
         "https://ansary-portfolio.vercel.app",
+        "https://contact-api-brown.vercel.app",
         ...configuredOrigins,
       ]);
       let isLocalDevelopmentOrigin = false;
@@ -215,6 +216,30 @@ app.get("/api/contact", async (req, res) => {
   }
 });
 
+app.delete("/api/contact/:id", authenticate, async (req, res) => {
+  if (!/^[1-9]\d*$/.test(req.params.id)) {
+    return res.status(400).json({ error: "Contact ID must be a positive integer" });
+  }
+
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id)) {
+    return res.status(400).json({ error: "Contact ID must be a positive integer" });
+  }
+
+  try {
+    await connectToDatabase();
+    const contact = await Contact.findOneAndDelete({ id });
+
+    if (!contact) {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+
+    return res.json({ ok: true, message: `Contact ${id} deleted` });
+  } catch (err) {
+    console.error("[DB] delete by ID failed:", err);
+    return res.status(500).json({ error: "Database error" });
+  }
+});
 
 app.delete("/api/contact", authenticate, async (req, res) => {
   try {
