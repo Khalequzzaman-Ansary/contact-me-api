@@ -199,4 +199,17 @@ test("unknown API paths return JSON 404 while docs retain their response types",
   assert.ok(openApi.paths["/api/contact/{id}"].delete);
   const uptimeSchema = openApi.paths["/api/health"].get.responses[200].content["application/json"].schema;
   assert.deepEqual(uptimeSchema.properties.uptime.required, ["days", "hours", "minutes", "seconds"]);
+
+  const swaggerInit = await fetch(`${baseUrl}/docs/swagger-ui-init.js`);
+  const swaggerConfig = await swaggerInit.text();
+  assert.equal(swaggerInit.status, 200);
+  assert.ok(swaggerConfig.includes("operationsSorter"));
+  assert.ok(
+    swaggerConfig.indexOf('"GET /api/contact"') <
+      swaggerConfig.indexOf('"GET /api/contact/{id}"')
+  );
+  assert.ok(
+    swaggerConfig.indexOf('"GET /api/contact/{id}"') <
+      swaggerConfig.indexOf('"DELETE /api/contact"')
+  );
 });

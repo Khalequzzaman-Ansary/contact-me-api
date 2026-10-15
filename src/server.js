@@ -118,6 +118,25 @@ app.use(
 // ---- swagger
 // CDN options to ensure assets load correctly on Vercel
 const swaggerUiOptions = {
+  swaggerOptions: {
+    operationsSorter: (first, second) => {
+      const order = [
+        "GET /api/health",
+        "POST /api/contact",
+        "GET /api/contact",
+        "GET /api/contact/{id}",
+        "DELETE /api/contact",
+        "DELETE /api/contact/{id}",
+      ];
+      const firstKey = `${first.get("method").toUpperCase()} ${first.get("path")}`;
+      const secondKey = `${second.get("method").toUpperCase()} ${second.get("path")}`;
+      const firstIndex = order.indexOf(firstKey);
+      const secondIndex = order.indexOf(secondKey);
+
+      return (firstIndex === -1 ? order.length : firstIndex) -
+        (secondIndex === -1 ? order.length : secondIndex);
+    },
+  },
   customCssUrl: "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.0.0/swagger-ui.min.css",
   customCss: require("fs").readFileSync(__dirname + "/swagger-dark.css", "utf8"),
   customJs: [
