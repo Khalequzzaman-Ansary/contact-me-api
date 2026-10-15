@@ -289,6 +289,37 @@ app.get("/api/contact/stream", (req, res) => {
   });
 });
 
+app.get("/api/contact/:id", async (req, res) => {
+  if (!/^[1-9]\d*$/.test(req.params.id)) {
+    return res.status(400).json({ error: "Contact ID must be a positive integer" });
+  }
+
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id)) {
+    return res.status(400).json({ error: "Contact ID must be a positive integer" });
+  }
+
+  try {
+    await connectToDatabase();
+    const contact = await Contact.findOne({ id }).lean();
+
+    if (!contact) {
+      return res.status(404).json({ error: "Contact not found" });
+    }
+
+    return res.json({
+      id: contact.id,
+      name: contact.name,
+      email: contact.email,
+      message: contact.message,
+      createdAt: contact.createdAt.toISOString(),
+    });
+  } catch (err) {
+    console.error("[DB] select by ID failed:", err);
+    return res.status(500).json({ error: "Database error" });
+  }
+});
+
 app.use((req, res) => {
   if (req.path === "/api" || req.path.startsWith("/api/")) {
     return res.status(404).json({ error: "API endpoint not found" });

@@ -187,6 +187,53 @@ const options = {
       },
 
       "/api/contact/{id}": {
+        get: {
+          tags: ["Contact"],
+          summary: "Get a contact by ID",
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              description: "Numeric contact ID returned by the API",
+              schema: { type: "integer", minimum: 1 },
+            },
+          ],
+          responses: {
+            200: {
+              description: "Contact found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ContactMessage" },
+                },
+              },
+            },
+            400: {
+              description: "Invalid contact ID",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            404: {
+              description: "Contact not found",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+            500: {
+              description: "Database error",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ErrorResponse" },
+                },
+              },
+            },
+          },
+        },
         delete: {
           tags: ["Contact"],
           summary: "Delete a contact by ID (admin only)",

@@ -35,6 +35,20 @@ test("health check returns structured uptime when the database is unavailable", 
   assert.ok(health.uptime.seconds >= 0 && health.uptime.seconds <= 59);
 });
 
+test("get contact by ID validates IDs and returns JSON for database errors", async () => {
+  for (const id of ["0", "not-a-number", "9007199254740992"]) {
+    const invalidId = await fetch(`${baseUrl}/api/contact/${id}`);
+    assert.equal(invalidId.status, 400, `id ${id}`);
+    assert.deepEqual(await invalidId.json(), {
+      error: "Contact ID must be a positive integer",
+    });
+  }
+
+  const validIdWithoutDatabase = await fetch(`${baseUrl}/api/contact/1`);
+  assert.equal(validIdWithoutDatabase.status, 500);
+  assert.deepEqual(await validIdWithoutDatabase.json(), { error: "Database error" });
+});
+
 test("malformed JSON returns a JSON 400 response", async () => {
   const response = await fetch(`${baseUrl}/api/contact`, {
     method: "POST",
@@ -181,6 +195,7 @@ test("unknown API paths return JSON 404 while docs retain their response types",
   assert.match(docs.headers.get("content-type"), /application\/json/);
   const openApi = await docs.json();
   assert.ok(openApi.paths["/api/contact"].delete);
+  assert.ok(openApi.paths["/api/contact/{id}"].get);
   assert.ok(openApi.paths["/api/contact/{id}"].delete);
   const uptimeSchema = openApi.paths["/api/health"].get.responses[200].content["application/json"].schema;
   assert.deepEqual(uptimeSchema.properties.uptime.required, ["days", "hours", "minutes", "seconds"]);

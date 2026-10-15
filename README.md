@@ -64,6 +64,7 @@ All routes are also listed in Swagger UI at `/docs` and in `/docs.json`.
 | `GET`    | `/api/health`         | No           | API and database status, with uptime split into days, hours, minutes, and seconds. Returns `503` if MongoDB is unavailable. |
 | `POST`   | `/api/contact`        | No           | Create a contact message.                                                                                                   |
 | `GET`    | `/api/contact`        | No           | List up to 200 contacts, newest first.                                                                                      |
+| `GET`    | `/api/contact/{id}`   | No           | Get one contact by its numeric API ID.                                                                                      |
 | `GET`    | `/api/contact/stream` | No           | Receive `contact:new` events over Server-Sent Events.                                                                       |
 | `DELETE` | `/api/contact/{id}`   | Bearer token | Delete one contact by its numeric API ID.                                                                                   |
 | `DELETE` | `/api/contact`        | Bearer token | Delete all contacts and reset the contact ID counter.                                                                       |
@@ -109,6 +110,16 @@ curl http://localhost:4000/api/contact
 ```
 
 Returns an array of up to 200 contacts, sorted newest first.
+
+### Get One Contact
+
+Use the numeric `id` returned when the contact was created or listed:
+
+```bash
+curl http://localhost:4000/api/contact/123
+```
+
+Returns the contact object on success, `400` for an invalid ID, or `404` if no contact has that ID.
 
 ### Delete Contacts
 
