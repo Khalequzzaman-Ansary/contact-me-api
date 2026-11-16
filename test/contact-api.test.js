@@ -87,6 +87,44 @@ test("non-string contact fields return JSON 400 without reaching MongoDB", async
   });
 });
 
+test("schema-invalid contact payloads are rejected before MongoDB access", async () => {
+  const whitespace = await fetch(`${baseUrl}/api/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: "   ", email: "ada@example.com", message: "Hello there" }),
+  });
+  assert.equal(whitespace.status, 400);
+  assert.deepEqual(await whitespace.json(), { error: "Missing required fields" });
+
+  const shortName = await fetch(`${baseUrl}/api/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: "A", email: "ada@example.com", message: "Hello there" }),
+  });
+  assert.equal(shortName.status, 400);
+  assert.deepEqual(await shortName.json(), { error: "Name must be between 2 and 80 characters" });
+
+  const invalidEmail = await fetch(`${baseUrl}/api/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: "Ada", email: "not-an-email", message: "Hello there" }),
+  });
+  assert.equal(invalidEmail.status, 400);
+  assert.deepEqual(await invalidEmail.json(), { error: "Email must be a valid email address" });
+
+  const longMessage = await fetch(`${baseUrl}/api/contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "Ada",
+      email: "ada@example.com",
+      message: "x".repeat(2001),
+    }),
+  });
+  assert.equal(longMessage.status, 400);
+  assert.deepEqual(await longMessage.json(), { error: "Message must be between 5 and 2000 characters" });
+});
+
 test("delete by ID requires authentication and validates IDs before database access", async () => {
   const unauthenticated = await fetch(`${baseUrl}/api/contact/1`, { method: "DELETE" });
   assert.equal(unauthenticated.status, 401);

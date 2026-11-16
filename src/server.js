@@ -53,6 +53,49 @@ function getUptimeParts() {
   return { days, hours, minutes, seconds };
 }
 
+function validateContactBody(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { error: "Request body must be a JSON object" };
+  }
+
+  const { name, email, message } = body;
+  if (name === undefined || email === undefined || message === undefined) {
+    return { error: "Missing required fields" };
+  }
+
+  if ([name, email, message].some((value) => typeof value !== "string")) {
+    return { error: "Name, email, and message must be strings" };
+  }
+
+  const normalized = {
+    name: name.trim(),
+    email: email.trim(),
+    message: message.trim(),
+  };
+
+  if (!normalized.name || !normalized.email || !normalized.message) {
+    return { error: "Missing required fields" };
+  }
+
+  if (normalized.name.length < 2 || normalized.name.length > 80) {
+    return { error: "Name must be between 2 and 80 characters" };
+  }
+
+  if (normalized.email.length > 160) {
+    return { error: "Email must be up to 160 characters" };
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized.email)) {
+    return { error: "Email must be a valid email address" };
+  }
+
+  if (normalized.message.length < 5 || normalized.message.length > 2000) {
+    return { error: "Message must be between 5 and 2000 characters" };
+  }
+
+  return { contact: normalized };
+}
+
 // ---- middleware
 app.use(
   helmet({
@@ -178,27 +221,19 @@ app.get("/api/health", async (req, res) => {
 
 
 app.post("/api/contact", async (req, res) => {
-  const body = req.body;
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
-    return res.status(400).json({ error: "Request body must be a JSON object" });
+  const validation = validateContactBody(req.body);
+  if (validation.error) {
+    return res.status(400).json({ error: validation.error });
   }
 
-  const { name, email, message } = body;
-
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
-  if ([name, email, message].some((value) => typeof value !== "string")) {
-    return res.status(400).json({ error: "Name, email, and message must be strings" });
-  }
+  const { name, email, message } = validation.contact;
 
   try {
     await connectToDatabase();
     const contact = await Contact.create({
-      name: name.trim(),
-      email: email.trim(),
-      message: message.trim(),
+      name,
+      email,
+      message,
     });
 
     const created = {
